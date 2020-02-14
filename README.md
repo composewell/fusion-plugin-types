@@ -5,18 +5,21 @@
 
 ## Motivation
 
-This package provides types used by the fusion-plugin package. By
-depending on this module instead of
-[fusion-plugin](https://github.com/composewell/fusion-plugin) you
-won't be bringing in the ghc dependency there by not tying your
-package to a ghc core library.
+This package provides types needed to run the fusion-plugin
+plugin. This package is separated from the
+[fusion-plugin](https://github.com/composewell/fusion-plugin) package
+so that library authors can annotate the types that `fusion-plugin`
+should try to fuse but avoid the `ghc` dependency in the library
+itself.
 
 ## Using the package
 
-To enable support for using the fusion-plugin plugin, add this package to your `build-depends` and annotate your types with `Fuse` type from this package.
+To enable support for using the `fusion-plugin` plugin, add this
+package to your `build-depends` and annotate your types with `Fuse`
+type from `Fusion.Plugin.Types` module.
 
 ```haskell
-import Fusin.Plugin.Types (Fuse (..))
+import Fusion.Plugin.Types (Fuse (..))
 
 {-# ANN type Step Fuse #-}
 data Step s a = Yield a s | Skip s | Stop
