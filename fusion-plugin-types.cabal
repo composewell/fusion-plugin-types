@@ -8,6 +8,8 @@ homepage:            https://github.com/composewell/fusion-plugin-types
 bug-reports:         https://github.com/composewell/fusion-plugin-types/issues
 license:             BSD-3-Clause
 license-file:        LICENSE
+tested-with:         GHC==8.6.5
+                   , GHC==8.8.1
 author:              Pranay Sashank
 maintainer:          pranaysashank@composewell.com
 copyright:           (c) 2020 Composewell Technologies
