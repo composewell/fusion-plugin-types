@@ -11,6 +11,7 @@
 
 module Fusion.Plugin.Types
   ( Fuse(..)
+  , FuseTypes(..)
   , Inspect(..)
   )
 where
@@ -37,6 +38,31 @@ import Language.Haskell.TH.Syntax (Name)
 -- data Step s a = Yield a s | Skip s | Stop
 -- @
 data Fuse = Fuse
+    deriving (Eq, Data)
+
+-- | A GHC annotation attached to a specific top level binding (via an @ANN@
+-- pragma on the binding, not on a type) that makes each of the listed types
+-- behave as if it were annotated with 'Fuse', but /only/ for the purpose of
+-- inlining within that one binding -- not anywhere else in the module.
+--
+-- This is the per-binding counterpart of 'Fuse'. Whereas @{-\# ANN type Step
+-- Fuse #-}@ marks @Step@ as fusible everywhere it is used, @{-\# ANN myFunc
+-- (FuseTypes [''Step]) #-}@ marks @Step@ (and any other listed types) as
+-- fusible only while inlining inside @myFunc@. This is useful when a type
+-- should drive fusion in one function but should not force inlining wherever
+-- else it happens to be used.
+--
+-- Type references are Template Haskell 'Name's (e.g. @''Step@), not plain
+-- strings, so a typo or a later rename of the referenced type is caught by
+-- GHC's ordinary renamer when the @ANN@ pragma is compiled -- a "not in scope"
+-- compile error, not a silently-stale annotation. Using @''Foo@ requires
+-- @{-\# LANGUAGE TemplateHaskellQuotes \#-}@ (or the heavier @TemplateHaskell@)
+-- in the annotated module.
+--
+-- @
+-- {-\# ANN myFunc (FuseTypes [''Step, ''MyMaybe]) #-}
+-- @
+newtype FuseTypes = FuseTypes [Name]
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an
