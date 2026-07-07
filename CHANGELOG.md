@@ -4,6 +4,7 @@
   and `allowOnlyTypes` for per-binding fusion inspection via `ANN` pragmas.
 * Add `FuseTypes` to mark types as fusible for inlining within a single
   binding only, via an `ANN` pragma on that binding.
+* Add `NoFuseTypes` annotation to locally override `Fuse`.
 
 ## 0.1.0
 

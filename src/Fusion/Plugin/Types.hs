@@ -12,6 +12,7 @@
 module Fusion.Plugin.Types
   ( Fuse(..)
   , FuseTypes(..)
+  , NoFuseTypes(..)
   , Inspect(..)
   )
 where
@@ -63,6 +64,31 @@ data Fuse = Fuse
 -- {-\# ANN myFunc (FuseTypes [''Step, ''MyMaybe]) #-}
 -- @
 newtype FuseTypes = FuseTypes [Name]
+    deriving (Eq, Data)
+
+-- | A GHC annotation attached to a specific top level binding (via an @ANN@
+-- pragma on the binding, not on a type) that makes each of the listed types
+-- behave as if it were /not/ annotated with 'Fuse', but /only/ for the purpose
+-- of inlining within that one binding -- not anywhere else in the module.
+--
+-- This is the local override of 'Fuse' (and of 'FuseTypes'). Whereas @{-\# ANN
+-- type Step Fuse #-}@ marks @Step@ as fusible everywhere it is used, @{-\# ANN
+-- myFunc (NoFuseTypes [''Step]) #-}@ suppresses that fusion for @Step@ (and any
+-- other listed types) while inlining inside @myFunc@, disabling the forced
+-- inlining those types would otherwise drive there. Fusion of those types
+-- everywhere else in the module is unaffected. This is useful when a type
+-- should drive fusion in general but should not force inlining inside one
+-- particular function.
+--
+-- Type references are Template Haskell 'Name's (e.g. @''Step@), not plain
+-- strings, to keep it typed, Using @''Foo@ requires @{-\# LANGUAGE
+-- TemplateHaskellQuotes \#-}@ (or the heavier @TemplateHaskell@) in the
+-- annotated module.
+--
+-- @
+-- {-\# ANN myFunc (NoFuseTypes [''Step, ''MyMaybe]) #-}
+-- @
+newtype NoFuseTypes = NoFuseTypes [Name]
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an
