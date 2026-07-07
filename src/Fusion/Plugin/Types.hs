@@ -12,12 +12,6 @@
 module Fusion.Plugin.Types
   ( Fuse(..)
   , Inspect(..)
-  , FuseSpec
-  , checkFusion
-  , forbid
-  , allow
-  , forbidTypes
-  , allowOnlyTypes
   )
 where
 
@@ -50,80 +44,36 @@ data Fuse = Fuse
 -- fusion report for just that binding, independent of the module-wide
 -- @-fplugin-opt=Fusion.Plugin:verbose=N@ flag.
 --
--- Build values of this type via 'checkFusion', 'forbidTypes', or
--- 'allowOnlyTypes' rather than the raw constructors.
---
 -- Type references are Template Haskell 'Name's (e.g. @''Step@), not plain
 -- strings. This means a typo, or a later rename of the referenced type in
 -- source, is caught by GHC's ordinary renamer when the @ANN@ pragma itself
 -- is compiled -- a "not in scope" compile error, not a silently-stale
 -- check. Using @''Foo@ requires @{-\# LANGUAGE TemplateHaskellQuotes \#-}@
 -- (or the heavier @TemplateHaskell@) in the annotated module.
+--
+-- @
+-- {-\# ANN function1 (FusionForbidAllow [] []) #-}
+-- {-\# ANN function1a (FusionForbidAllow [''Text] []) #-}
+-- {-\# ANN function1b (FusionForbidAllow [''Text] [''ByteString]) #-}
+-- {-\# ANN function2 (AllowAllExcept [''SomeType]) #-}
+-- {-\# ANN function3 (ForbidAllExcept [''Int, ''IO]) #-}
+-- @
 data Inspect
-    = ForbidTypes [Name]
-    -- ^ Built via 'forbidTypes'.
-    | CheckFusion [Name] [Name]
-    -- ^ Built via 'checkFusion'.
-    | AllowOnlyTypes [Name]
-    -- ^ Built via 'allowOnlyTypes'.
+    = FusionForbidAllow [Name] [Name]
+    -- ^ Report occurrences of every 'Fuse'-annotated type found in the
+    -- binding -- the same base set the module-wide report uses -- plus any
+    -- types named in the first (forbid) list, minus any types named in the
+    -- second (allow) list. A name present in both is allowed (the allow-list
+    -- wins). @FusionForbidAllow [] []@ enforces just the baseline: nothing
+    -- 'Fuse'-annotated may survive to core.
+    | AllowAllExcept [Name]
+    -- ^ Blocklist: report occurrences of exactly the named
+    -- types/constructors found anywhere in the binding, regardless of
+    -- whether they carry a 'Fuse' annotation. Everything else in core is
+    -- fine.
+    | ForbidAllExcept [Name]
+    -- ^ Allowlist: report occurrences of literally every type/constructor
+    -- found in the binding -- a general "boxing detector", not limited to
+    -- 'Fuse'-annotated types -- except the named types, which may appear
+    -- freely.
     deriving (Eq, Data)
-
--- | A composable specification of extra types to forbid, and types to
--- allow, on top of the baseline set of 'Fuse'-annotated types checked by
--- 'checkFusion'. Build one with 'forbid' and/or 'allow' and combine them
--- with @('<>')@; 'mempty' means "just the baseline".
-data FuseSpec = FuseSpec
-    { fuseSpecForbid :: [Name]
-    , fuseSpecAllow :: [Name]
-    }
-
-instance Semigroup FuseSpec where
-    FuseSpec f1 a1 <> FuseSpec f2 a2 = FuseSpec (f1 <> f2) (a1 <> a2)
-
-instance Monoid FuseSpec where
-    mempty = FuseSpec [] []
-
--- | Also forbid the named types, even though they carry no 'Fuse'
--- annotation. Used with 'checkFusion'.
-forbid :: [Name] -> FuseSpec
-forbid names = mempty { fuseSpecForbid = names }
-
--- | Allow the named types even if they are 'Fuse'-annotated or otherwise
--- forbidden -- an overriding allow-list. Used with 'checkFusion'.
-allow :: [Name] -> FuseSpec
-allow names = mempty { fuseSpecAllow = names }
-
--- | Report occurrences of every 'Fuse'-annotated type found in the binding
--- -- the same base set the module-wide report uses -- plus any types named
--- via 'forbid', minus any types named via 'allow'. A name present in both
--- is allowed (the allow-list wins). @checkFusion mempty@ enforces just the
--- baseline: nothing 'Fuse'-annotated may survive to core.
---
--- @
--- {-\# ANN function1 (checkFusion mempty) #-}
--- {-\# ANN function1a (checkFusion (forbid [''Text])) #-}
--- {-\# ANN function1b (checkFusion (forbid [''Text] <> allow [''ByteString])) #-}
--- @
-checkFusion :: FuseSpec -> Inspect
-checkFusion (FuseSpec f a) = CheckFusion f a
-
--- | Blocklist: report occurrences of exactly the named types/constructors
--- found anywhere in the binding, regardless of whether they carry a 'Fuse'
--- annotation. Everything else in core is fine.
---
--- @
--- {-\# ANN function2 (forbidTypes [''SomeType]) #-}
--- @
-forbidTypes :: [Name] -> Inspect
-forbidTypes = ForbidTypes
-
--- | Allowlist: report occurrences of literally every type/constructor found
--- in the binding -- a general "boxing detector", not limited to
--- 'Fuse'-annotated types -- except the named types, which may appear
--- freely.
---
--- @
--- {-\# ANN function3 (allowOnlyTypes [''Int, ''IO]) #-}
--- @
-allowOnlyTypes :: [Name] -> Inspect
-allowOnlyTypes = AllowOnlyTypes
