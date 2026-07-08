@@ -105,6 +105,13 @@ newtype NoFuseTypes = NoFuseTypes [Name]
 -- check. Using @''Foo@ requires @{-\# LANGUAGE TemplateHaskellQuotes \#-}@
 -- (or the heavier @TemplateHaskell@) in the annotated module.
 --
+-- The names must be /type/ names (double quote, e.g. @''Int@), not data
+-- constructor names (single quote, e.g. @'I#@). Occurrences are matched by
+-- their type constructor, so to exclude boxed @Int@s from a report write
+-- @''Int@, not @'I#@. Passing a data constructor such as @'I#@ silently
+-- matches nothing (its type constructor @Int@ is what appears in core), even
+-- though the report may /display/ the constructor name.
+--
 -- @
 -- {-\# ANN function1 (FusionForbidAllow [] []) #-}
 -- {-\# ANN function1a (FusionForbidAllow [''Text] []) #-}
