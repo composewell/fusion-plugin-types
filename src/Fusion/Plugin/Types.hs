@@ -14,6 +14,7 @@ module Fusion.Plugin.Types
   , FuseTypes(..)
   , NoFuseTypes(..)
   , Inspect(..)
+  , ShowCoreSize(..)
   )
 where
 
@@ -128,4 +129,18 @@ data Inspect
     -- found in the binding -- a general "boxing detector", not limited to
     -- 'Fuse'-annotated types -- except the named types, which may appear
     -- freely.
+    deriving (Eq, Data)
+
+-- | A GHC annotation attached to a specific top level binding (via an @ANN@
+-- pragma on the binding) that makes the plugin report the size of the
+-- optimized Core of that binding after all fusion-plugin passes have run.
+--
+-- This is useful for tracking the Core size of a hot binding: an unexpected
+-- blow-up in size is often a symptom of failed fusion, runaway inlining, or
+-- SpecConstr optimization blowing up.
+--
+-- @
+-- {-\# ANN myFunction ShowCoreSize #-}
+-- @
+data ShowCoreSize = ShowCoreSize
     deriving (Eq, Data)
