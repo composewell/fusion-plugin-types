@@ -15,6 +15,7 @@ module Fusion.Plugin.Types
   , NoFuseTypes(..)
   , Inspect(..)
   , ShowCoreSize(..)
+  , DumpCore(..)
   )
 where
 
@@ -143,4 +144,24 @@ data Inspect
 -- {-\# ANN myFunction ShowCoreSize #-}
 -- @
 data ShowCoreSize = ShowCoreSize
+    deriving (Eq, Data)
+
+-- | A GHC annotation attached to a specific top level binding (via an @ANN@
+-- pragma on the binding) that makes the plugin dump the optimized Core of that
+-- binding, after all fusion-plugin passes have run, to a file.
+--
+-- The Core is written to a file under the @fusion-plugin-output@ directory, in
+-- a subdirectory named after the package being compiled, in a file whose name
+-- is the full module name and the binding name joined with a @.@, with a
+-- @.dump-simpl@ suffix. For example, a binding @myFunction@ in module
+-- @Data.Stream@ of package @my-pkg@ is written to
+-- @fusion-plugin-output\/my-pkg\/Data.Stream.myFunction.dump-simpl@.
+--
+-- This is useful for inspecting the final Core of a hot binding without having
+-- to wade through the Core of the entire module.
+--
+-- @
+-- {-\# ANN myFunction DumpCore #-}
+-- @
+data DumpCore = DumpCore
     deriving (Eq, Data)
