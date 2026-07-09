@@ -2,22 +2,34 @@ cabal-version:       2.2
 
 name:                fusion-plugin-types
 version:             0.1.1
-synopsis:            Types for the fusion-plugin package.
-description:         GHC package that provides types that when used in a package can be identified by the <https://hackage.haskell.org/package/fusion-plugin fusion-plugin> package to perform any extra optimizations.
+synopsis:            Annotation types for the fusion-plugin package.
+description:
+  Annotation types for enforcing and verifying stream fusion
+  optimizations using GHC, designed for use with the
+  <https://hackage.haskell.org/package/fusion-plugin fusion-plugin>
+  package.
 homepage:            https://github.com/composewell/fusion-plugin-types
 bug-reports:         https://github.com/composewell/fusion-plugin-types/issues
 license:             BSD-3-Clause
 license-file:        LICENSE
-tested-with:         GHC==8.6.5
-                   , GHC==8.8.1
+tested-with:
+      GHC==8.10.7
+    , GHC==9.0.2
+    , GHC==9.2.8
+    , GHC==9.4.7
+    , GHC==9.6.3
+    , GHC==9.8.4
+    , GHC==9.10.3
+    , GHC==9.12.4
+    , GHC==9.14.1
 author:              Pranay Sashank
-maintainer:          pranaysashank@composewell.com
+maintainer:          streamly@composewell.com
 copyright:           (c) 2020 Composewell Technologies
 category:            Development
 build-type:          Simple
-extra-source-files:  CHANGELOG.md
-                     README.md
-                     stack.yaml
+extra-doc-files:
+    CHANGELOG.md
+    README.md
 
 source-repository head
     type: git
