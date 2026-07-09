@@ -173,7 +173,7 @@ data InspectTypeClasses
 -- @
 -- {-\# ANN myFunction (MaxCoreSize 1000) #-}
 -- @
-data MaxCoreSize = MaxCoreSize Int
+newtype MaxCoreSize = MaxCoreSize Int
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
