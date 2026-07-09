@@ -63,6 +63,9 @@ data Fuse = Fuse
 -- @{-\# LANGUAGE TemplateHaskellQuotes \#-}@ (or the heavier @TemplateHaskell@)
 -- in the annotated module.
 --
+-- At most one 'FuseTypes' annotation is allowed per binding (attaching more
+-- than one is a compile error); list all the types in the single annotation.
+--
 -- @
 -- {-\# ANN myFunc (FuseTypes [''Step, ''MyMaybe]) #-}
 -- @
@@ -88,6 +91,9 @@ newtype FuseTypes = FuseTypes [Name]
 -- TemplateHaskellQuotes \#-}@ (or the heavier @TemplateHaskell@) in the
 -- annotated module.
 --
+-- At most one 'NoFuseTypes' annotation is allowed per binding (attaching more
+-- than one is a compile error); list all the types in the single annotation.
+--
 -- @
 -- {-\# ANN myFunc (NoFuseTypes [''Step, ''MyMaybe]) #-}
 -- @
@@ -112,6 +118,11 @@ newtype NoFuseTypes = NoFuseTypes [Name]
 -- @''Int@, not @'I#@. Passing a data constructor such as @'I#@ silently
 -- matches nothing (its type constructor @Int@ is what appears in core), even
 -- though the report may /display/ the constructor name.
+--
+-- At most one 'InspectTypes' annotation is allowed per binding (attaching
+-- more than one is a compile error); combine everything you need to check
+-- into a single directive. Each example below annotates a /different/
+-- binding:
 --
 -- @
 -- {-\# ANN function1 (ForbidFused [] []) #-}
@@ -150,6 +161,10 @@ data InspectTypes
 -- @-fplugin-opt=Fusion.Plugin:verbose=N@ flag: an annotated binding is always
 -- reported. The names must be /class/ names (double quote, e.g. @''Num@).
 --
+-- At most one 'InspectTypeClasses' annotation is allowed per binding
+-- (attaching more than one is a compile error). Each example below annotates
+-- a /different/ binding:
+--
 -- @
 -- {-\# ANN function1 (ForbidTypeClasses [''Num]) #-}
 -- {-\# ANN function2 (PermitTypeClasses [''Ord, ''Eq]) #-}
@@ -178,6 +193,9 @@ data InspectTypeClasses
 -- prints the detailed Core size of the binding regardless of whether the
 -- limit is exceeded.
 --
+-- At most one 'MaxCoreSize' annotation is allowed per binding (attaching more
+-- than one is a compile error).
+--
 -- @
 -- {-\# ANN myFunction (MaxCoreSize 1000) #-}
 -- @
@@ -197,6 +215,9 @@ data MaxCoreSize = MaxCoreSize Int
 --
 -- This is useful for inspecting the final Core of a hot binding without having
 -- to wade through the Core of the entire module.
+--
+-- At most one 'DumpCore' annotation is allowed per binding (attaching more
+-- than one is a compile error).
 --
 -- @
 -- {-\# ANN myFunction DumpCore #-}
