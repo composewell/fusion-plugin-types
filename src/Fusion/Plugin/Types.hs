@@ -14,7 +14,7 @@ module Fusion.Plugin.Types
   , FuseTypes(..)
   , NoFuseTypes(..)
   , Inspect(..)
-  , ShowCoreSize(..)
+  , MaxCoreSize(..)
   , DumpCore(..)
   )
 where
@@ -140,17 +140,24 @@ data Inspect
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
--- pragma on the binding) that makes the plugin report the size of the
--- optimized Core of that binding after all fusion-plugin passes have run.
+-- pragma on the binding) that sets a maximum on the number of terms in the
+-- optimized Core of that binding, measured after all fusion-plugin passes
+-- have run. If the binding exceeds the given size the plugin reports a
+-- violation.
 --
 -- This is useful for tracking the Core size of a hot binding: an unexpected
 -- blow-up in size is often a symptom of failed fusion, runaway inlining, or
 -- SpecConstr optimization blowing up.
 --
+-- By default (or at @-fplugin-opt=Fusion.Plugin:verbose=1@) the plugin prints
+-- a message only when the size is exceeded. At @verbose=2@ and above it also
+-- prints the detailed Core size of the binding regardless of whether the
+-- limit is exceeded.
+--
 -- @
--- {-\# ANN myFunction ShowCoreSize #-}
+-- {-\# ANN myFunction (MaxCoreSize 1000) #-}
 -- @
-data ShowCoreSize = ShowCoreSize
+data MaxCoreSize = MaxCoreSize Int
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
