@@ -10,12 +10,30 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
 module Fusion.Plugin.Types
-  ( Fuse(..)
+  (
+  -- * Annotations
+  -- | This module contains annotations to be used with the GHC @ANN@ pragma on
+  -- a type or a binding.
+  --
+  -- Type references are Template Haskell 'Name's (e.g. @''Step@), not plain
+  -- strings, to allow compile time checking of the names.
+  --
+  -- At most one annotation is allowed per binding (attaching more than one is
+  -- a compile error).
+
+  -- ** Fusion Annotations
+  -- | Annotations to force inlining for fusion.
+    Fuse(..)
   , FuseTypes(..)
   , NoFuseTypes(..)
+
+  -- ** Inspection Annotations
+  -- | Annotations to find fusion violations.
   , InspectTypes(..)
   , InspectTypeClasses(..)
   , MaxCoreSize(..)
+
+  -- ** Debugging Annotations
   , DumpCore(..)
   )
 where
@@ -56,18 +74,8 @@ data Fuse = Fuse
 -- should drive fusion in one function but should not force inlining wherever
 -- else it happens to be used.
 --
--- Type references are Template Haskell 'Name's (e.g. @''Step@), not plain
--- strings, so a typo or a later rename of the referenced type is caught by
--- GHC's ordinary renamer when the @ANN@ pragma is compiled -- a "not in scope"
--- compile error, not a silently-stale annotation. Using @''Foo@ requires
--- @{-\# LANGUAGE TemplateHaskellQuotes \#-}@ (or the heavier @TemplateHaskell@)
--- in the annotated module.
---
--- At most one 'FuseTypes' annotation is allowed per binding (attaching more
--- than one is a compile error); list all the types in the single annotation.
---
 -- @
--- {-\# ANN myFunc (FuseTypes [''Step, ''MyMaybe]) #-}
+-- {-\# ANN myFunc (FuseTypes [''Step, ''Maybe]) #-}
 -- @
 newtype FuseTypes = FuseTypes [Name]
     deriving (Eq, Data)
@@ -86,43 +94,21 @@ newtype FuseTypes = FuseTypes [Name]
 -- should drive fusion in general but should not force inlining inside one
 -- particular function.
 --
--- Type references are Template Haskell 'Name's (e.g. @''Step@), not plain
--- strings, to keep it typed, Using @''Foo@ requires @{-\# LANGUAGE
--- TemplateHaskellQuotes \#-}@ (or the heavier @TemplateHaskell@) in the
--- annotated module.
---
--- At most one 'NoFuseTypes' annotation is allowed per binding (attaching more
--- than one is a compile error); list all the types in the single annotation.
---
 -- @
--- {-\# ANN myFunc (NoFuseTypes [''Step, ''MyMaybe]) #-}
+-- {-\# ANN myFunc (NoFuseTypes [''Step]) #-}
 -- @
 newtype NoFuseTypes = NoFuseTypes [Name]
     deriving (Eq, Data)
 
--- | A GHC annotation attached to a specific top level binding (via an
--- @ANN@ pragma on the binding, not on a type) that requests a focused
--- fusion report for just that binding, independent of the module-wide
--- @-fplugin-opt=Fusion.Plugin:verbose=N@ flag.
---
--- Type references are Template Haskell 'Name's (e.g. @''Step@), not plain
--- strings. This means a typo, or a later rename of the referenced type in
--- source, is caught by GHC's ordinary renamer when the @ANN@ pragma itself
--- is compiled -- a "not in scope" compile error, not a silently-stale
--- check. Using @''Foo@ requires @{-\# LANGUAGE TemplateHaskellQuotes \#-}@
--- (or the heavier @TemplateHaskell@) in the annotated module.
+-- | A GHC annotation attached to a specific top level binding (via an @ANN@
+-- pragma on the binding, not on a type) that requests a fusion report for just
+-- that binding.
 --
 -- The names must be /type/ names (double quote, e.g. @''Int@), not data
 -- constructor names (single quote, e.g. @'I#@). Occurrences are matched by
 -- their type constructor, so to exclude boxed @Int@s from a report write
 -- @''Int@, not @'I#@. Passing a data constructor such as @'I#@ silently
--- matches nothing (its type constructor @Int@ is what appears in core), even
--- though the report may /display/ the constructor name.
---
--- At most one 'InspectTypes' annotation is allowed per binding (attaching
--- more than one is a compile error); combine everything you need to check
--- into a single directive. Each example below annotates a /different/
--- binding:
+-- matches nothing, even though the report may /display/ the constructor name.
 --
 -- @
 -- {-\# ANN function1 (ForbidFused [] []) #-}
@@ -133,17 +119,14 @@ newtype NoFuseTypes = NoFuseTypes [Name]
 -- @
 data InspectTypes
     = ForbidFused [Name] [Name]
-    -- ^ Report occurrences of every 'Fuse'-annotated type found in the
-    -- binding -- the same base set the module-wide report uses -- plus any
-    -- types named in the first (forbid) list, minus any types named in the
-    -- second (allow) list. A name present in both is allowed (the allow-list
-    -- wins). @ForbidFused [] []@ enforces just the baseline: nothing
-    -- 'Fuse'-annotated may survive to core.
+    -- ^ Report occurrences of every 'Fuse'-annotated type found in the binding
+    -- -- plus any types named in the first (forbid) list, minus any types
+    -- named in the second (allow) list. A name present in both lists is
+    -- allowed.
     | ForbidTypes [Name]
-    -- ^ Blocklist: report occurrences of exactly the named
-    -- types/constructors found anywhere in the binding, regardless of
-    -- whether they carry a 'Fuse' annotation. Everything else in core is
-    -- fine.
+    -- ^ Blocklist: report occurrences of exactly the named types/constructors
+    -- found anywhere in the binding, regardless of whether they carry a 'Fuse'
+    -- annotation. Everything else in core is fine.
     | PermitTypes [Name]
     -- ^ Allowlist: report occurrences of literally every type/constructor
     -- found in the binding -- a general "boxing detector", not limited to
@@ -154,16 +137,10 @@ data InspectTypes
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
 -- pragma on the binding) that checks for the presence or absence of type
 -- classes in the optimized Core of that binding. A type class appears in Core
--- as a dictionary argument; a class that survives to Core is usually a symptom
--- of a dictionary that failed to specialize away.
+-- as a dictionary argument; a class that makes it to the Core is usually a
+-- symptom of a dictionary that failed to specialize.
 --
--- Like 'InspectTypes', the check works regardless of the module-wide
--- @-fplugin-opt=Fusion.Plugin:verbose=N@ flag: an annotated binding is always
--- reported. The names must be /class/ names (double quote, e.g. @''Num@).
---
--- At most one 'InspectTypeClasses' annotation is allowed per binding
--- (attaching more than one is a compile error). Each example below annotates
--- a /different/ binding:
+-- The names must be /class/ names (double quote, e.g. @''Num@).
 --
 -- @
 -- {-\# ANN function1 (ForbidTypeClasses [''Num]) #-}
@@ -193,9 +170,6 @@ data InspectTypeClasses
 -- prints the detailed Core size of the binding regardless of whether the
 -- limit is exceeded.
 --
--- At most one 'MaxCoreSize' annotation is allowed per binding (attaching more
--- than one is a compile error).
---
 -- @
 -- {-\# ANN myFunction (MaxCoreSize 1000) #-}
 -- @
@@ -207,17 +181,17 @@ data MaxCoreSize = MaxCoreSize Int
 -- binding, after all fusion-plugin passes have run, to a file.
 --
 -- The Core is written to a file under the @fusion-plugin-output@ directory, in
--- a subdirectory named after the package being compiled, in a file whose name
--- is the full module name and the binding name joined with a @.@, with a
--- @.dump-simpl@ suffix. For example, a binding @myFunction@ in module
--- @Data.Stream@ of package @my-pkg@ is written to
+-- a subdirectory named after the package being compiled. For example, a
+-- binding @myFunction@ in module @Data.Stream@ of package @my-pkg@ is written
+-- to
 -- @fusion-plugin-output\/my-pkg\/Data.Stream.myFunction.dump-simpl@.
+--
+-- Note that the output directory is created in the current directory from
+-- where GHC is invoked, when building with cabal it is usually the directory
+-- in which the cabal file of the package resides.
 --
 -- This is useful for inspecting the final Core of a hot binding without having
 -- to wade through the Core of the entire module.
---
--- At most one 'DumpCore' annotation is allowed per binding (attaching more
--- than one is a compile error).
 --
 -- @
 -- {-\# ANN myFunction DumpCore #-}

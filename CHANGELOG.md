@@ -1,12 +1,15 @@
 ## 0.1.1
 
-* Add `InspectTypes` for per-binding fusion inspection via `ANN` pragmas.
-* Add `InspectTypeClasses` to check for the presence/absence of type classes
-  in the Core of a binding via `ANN` pragmas.
-* Add `FuseTypes` to mark types as fusible for inlining within a single
-  binding only, via an `ANN` pragma on that binding.
-* Add `NoFuseTypes` annotation to locally override `Fuse` for a binding.
-* Add `ShowCoreSize` annotation to report the Core size of a binding.
+* Add `InspectTypes` annotations for inspecting types and allocations present
+  within a binding.
+* Add `InspectTypeClasses` annotations for type class dictionary inspection
+  within a binding.
+* Add `FuseTypes` annotation for making types locally fusible within a
+  specific binding.
+* Add `NoFuseTypes` annotation for overriding `Fuse` data type annotation
+  inside a binding.
+* Add `MaxCoreSize` annotation to report if core size of a binding
+  exceeds a certain threashold.
 
 ## 0.1.0
 
