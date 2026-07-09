@@ -15,8 +15,8 @@ itself.
 ## Using the package
 
 To enable support for using the `fusion-plugin` plugin, add this
-package to your `build-depends` and annotate your types with `Fuse`
-type from `Fusion.Plugin.Types` module.
+package to your `build-depends` and annotate your types with any of the
+annotations from the `Fusion.Plugin.Types` module. For example:
 
 ```haskell
 import Fusion.Plugin.Types (Fuse (..))
