@@ -13,7 +13,7 @@ module Fusion.Plugin.Types
   ( Fuse(..)
   , FuseTypes(..)
   , NoFuseTypes(..)
-  , Inspect(..)
+  , InspectTypes(..)
   , MaxCoreSize(..)
   , DumpCore(..)
   )
@@ -113,26 +113,26 @@ newtype NoFuseTypes = NoFuseTypes [Name]
 -- though the report may /display/ the constructor name.
 --
 -- @
--- {-\# ANN function1 (FusionForbidAllow [] []) #-}
--- {-\# ANN function1a (FusionForbidAllow [''Text] []) #-}
--- {-\# ANN function1b (FusionForbidAllow [''Text] [''ByteString]) #-}
--- {-\# ANN function2 (AllowAllExcept [''SomeType]) #-}
--- {-\# ANN function3 (ForbidAllExcept [''Int, ''IO]) #-}
+-- {-\# ANN function1 (ForbidFused [] []) #-}
+-- {-\# ANN function1a (ForbidFused [''Maybe] []) #-}
+-- {-\# ANN function1b (ForbidFused [''Maybe] [''Step]) #-}
+-- {-\# ANN function2 (ForbidTypes [''Maybe]) #-}
+-- {-\# ANN function3 (PermitTypes [''Int, ''IO]) #-}
 -- @
-data Inspect
-    = FusionForbidAllow [Name] [Name]
+data InspectTypes
+    = ForbidFused [Name] [Name]
     -- ^ Report occurrences of every 'Fuse'-annotated type found in the
     -- binding -- the same base set the module-wide report uses -- plus any
     -- types named in the first (forbid) list, minus any types named in the
     -- second (allow) list. A name present in both is allowed (the allow-list
-    -- wins). @FusionForbidAllow [] []@ enforces just the baseline: nothing
+    -- wins). @ForbidFused [] []@ enforces just the baseline: nothing
     -- 'Fuse'-annotated may survive to core.
-    | AllowAllExcept [Name]
+    | ForbidTypes [Name]
     -- ^ Blocklist: report occurrences of exactly the named
     -- types/constructors found anywhere in the binding, regardless of
     -- whether they carry a 'Fuse' annotation. Everything else in core is
     -- fine.
-    | ForbidAllExcept [Name]
+    | PermitTypes [Name]
     -- ^ Allowlist: report occurrences of literally every type/constructor
     -- found in the binding -- a general "boxing detector", not limited to
     -- 'Fuse'-annotated types -- except the named types, which may appear
