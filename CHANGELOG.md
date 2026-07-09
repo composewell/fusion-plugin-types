@@ -1,6 +1,8 @@
 ## 0.1.1
 
 * Add `InspectTypes` for per-binding fusion inspection via `ANN` pragmas.
+* Add `InspectTypeClasses` to check for the presence/absence of type classes
+  in the Core of a binding via `ANN` pragmas.
 * Add `FuseTypes` to mark types as fusible for inlining within a single
   binding only, via an `ANN` pragma on that binding.
 * Add `NoFuseTypes` annotation to locally override `Fuse` for a binding.

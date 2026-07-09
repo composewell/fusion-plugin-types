@@ -14,6 +14,7 @@ module Fusion.Plugin.Types
   , FuseTypes(..)
   , NoFuseTypes(..)
   , InspectTypes(..)
+  , InspectTypeClasses(..)
   , MaxCoreSize(..)
   , DumpCore(..)
   )
@@ -137,6 +138,29 @@ data InspectTypes
     -- found in the binding -- a general "boxing detector", not limited to
     -- 'Fuse'-annotated types -- except the named types, which may appear
     -- freely.
+    deriving (Eq, Data)
+
+-- | A GHC annotation attached to a specific top level binding (via an @ANN@
+-- pragma on the binding) that checks for the presence or absence of type
+-- classes in the optimized Core of that binding. A type class appears in Core
+-- as a dictionary argument; a class that survives to Core is usually a symptom
+-- of a dictionary that failed to specialize away.
+--
+-- Like 'InspectTypes', the check works regardless of the module-wide
+-- @-fplugin-opt=Fusion.Plugin:verbose=N@ flag: an annotated binding is always
+-- reported. The names must be /class/ names (double quote, e.g. @''Num@).
+--
+-- @
+-- {-\# ANN function1 (ForbidTypeClasses [''Num]) #-}
+-- {-\# ANN function2 (PermitTypeClasses [''Ord, ''Eq]) #-}
+-- @
+data InspectTypeClasses
+    = ForbidTypeClasses [Name]
+    -- ^ Blocklist: report occurrences of exactly the named classes found
+    -- anywhere in the Core of the binding. Any other class is fine.
+    | PermitTypeClasses [Name]
+    -- ^ Allowlist: report every class found in the Core of the binding except
+    -- the named classes, which may appear freely.
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
