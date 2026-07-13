@@ -116,6 +116,8 @@ newtype NoFuseTypes = NoFuseTypes [Name]
 -- {-\# ANN function1b (ForbidFused [''Maybe] [''Step]) #-}
 -- {-\# ANN function2 (ForbidTypes [''Maybe]) #-}
 -- {-\# ANN function3 (PermitTypes [''Int, ''IO]) #-}
+-- {-\# ANN function4 (PermitPatternMatches [''Int, ''IO]) #-}
+-- {-\# ANN function5 (PermitAllocations [''Int, ''IO]) #-}
 -- @
 data InspectTypes
     = ForbidFused [Name] [Name]
@@ -132,6 +134,16 @@ data InspectTypes
     -- found in the binding -- a general "boxing detector", not limited to
     -- 'Fuse'-annotated types -- except the named types, which may appear
     -- freely.
+    | PermitPatternMatches [Name]
+    -- ^ Like 'PermitTypes' but only reports occurrences in a scrutinizing
+    -- (pattern-match, i.e. @case@) position -- a value being deconstructed --
+    -- ignoring constructing positions. Reports every type pattern-matched in
+    -- the binding except the named types, which may appear freely.
+    | PermitAllocations [Name]
+    -- ^ Like 'PermitTypes' but only reports occurrences in a constructing
+    -- (allocating) position -- a value being built -- ignoring scrutinizing
+    -- positions. Reports every type constructed in the binding except the
+    -- named types, which may appear freely.
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
