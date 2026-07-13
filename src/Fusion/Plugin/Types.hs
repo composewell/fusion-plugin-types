@@ -114,8 +114,8 @@ newtype NoFuseTypes = NoFuseTypes [Name]
 -- {-\# ANN function1 (ForbidFused [] []) #-}
 -- {-\# ANN function1a (ForbidFused [''Maybe] []) #-}
 -- {-\# ANN function1b (ForbidFused [''Maybe] [''Step]) #-}
--- {-\# ANN function2 (ForbidTypes [''Maybe]) #-}
--- {-\# ANN function3 (PermitTypes [''Int, ''IO]) #-}
+-- {-\# ANN function2 (ForbidBoxedUse [''Maybe]) #-}
+-- {-\# ANN function3 (PermitBoxedUse [''Int, ''IO]) #-}
 -- {-\# ANN function4 (PermitPatternMatches [''Int, ''IO]) #-}
 -- {-\# ANN function5 (PermitAllocations [''Int, ''IO]) #-}
 -- @
@@ -125,22 +125,22 @@ data InspectTypes
     -- -- plus any types named in the first (forbid) list, minus any types
     -- named in the second (allow) list. A name present in both lists is
     -- allowed.
-    | ForbidTypes [Name]
+    | ForbidBoxedUse [Name]
     -- ^ Blocklist: report occurrences of exactly the named types/constructors
     -- found anywhere in the binding, regardless of whether they carry a 'Fuse'
     -- annotation. Everything else in core is fine.
-    | PermitTypes [Name]
+    | PermitBoxedUse [Name]
     -- ^ Allowlist: report occurrences of literally every type/constructor
     -- found in the binding -- a general "boxing detector", not limited to
     -- 'Fuse'-annotated types -- except the named types, which may appear
     -- freely.
     | PermitPatternMatches [Name]
-    -- ^ Like 'PermitTypes' but only reports occurrences in a scrutinizing
+    -- ^ Like 'PermitBoxedUse' but only reports occurrences in a scrutinizing
     -- (pattern-match, i.e. @case@) position -- a value being deconstructed --
     -- ignoring constructing positions. Reports every type pattern-matched in
     -- the binding except the named types, which may appear freely.
     | PermitAllocations [Name]
-    -- ^ Like 'PermitTypes' but only reports occurrences in a constructing
+    -- ^ Like 'PermitBoxedUse' but only reports occurrences in a constructing
     -- (allocating) position -- a value being built -- ignoring scrutinizing
     -- positions. Reports every type constructed in the binding except the
     -- named types, which may appear freely.
