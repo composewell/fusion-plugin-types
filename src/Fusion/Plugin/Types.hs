@@ -26,6 +26,7 @@ module Fusion.Plugin.Types
     Fuse(..)
   , FuseTypes(..)
   , NoFuseTypes(..)
+  , NoFuse(..)
 
   -- ** Inspection Annotations
   -- | Annotations to find fusion violations.
@@ -83,7 +84,8 @@ newtype FuseTypes = FuseTypes [Name]
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
 -- pragma on the binding, not on a type) that makes each of the listed types
 -- behave as if it were /not/ annotated with 'Fuse', but /only/ for the purpose
--- of inlining within that one binding -- not anywhere else in the module.
+-- of inlining within that one binding -- not anywhere else in the module. This
+-- is applicable for any nested bindings within the scope of that binding.
 --
 -- This is the local override of 'Fuse' (and of 'FuseTypes'). Whereas @{-\# ANN
 -- type Step Fuse #-}@ marks @Step@ as fusible everywhere it is used, @{-\# ANN
@@ -98,6 +100,17 @@ newtype FuseTypes = FuseTypes [Name]
 -- {-\# ANN myFunc (NoFuseTypes [''Step]) #-}
 -- @
 newtype NoFuseTypes = NoFuseTypes [Name]
+    deriving (Eq, Data)
+
+-- | A GHC annotation attached to a specific top level binding (via an @ANN@
+-- pragma on the binding, not on a type) that disables forced inlining of that
+-- binding and any nested bindings within the scope of that binding altogether,
+-- regardless of which types are involved.
+--
+-- @
+-- {-\# ANN myFunc NoFuse #-}
+-- @
+data NoFuse = NoFuse
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@

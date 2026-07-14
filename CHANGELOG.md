@@ -6,8 +6,10 @@
   within a binding.
 * Add `FuseTypes` annotation for making types locally fusible within a
   specific binding.
-* Add `NoFuseTypes` annotation for overriding `Fuse` data type annotation
+* Add `NoFuse` annotation for disabling any `Fuse` data type annotation
   inside a binding.
+* Add `NoFuseTypes` annotation for disabling `Fuse` annotation for specific
+  types within a binding.
 * Add `MaxCoreSize` annotation to report if core size of a binding
   exceeds a certain threashold.
 
