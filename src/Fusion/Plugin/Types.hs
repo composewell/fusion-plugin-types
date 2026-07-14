@@ -206,15 +206,16 @@ newtype MaxCoreSize = MaxCoreSize Int
 -- pragma on the binding) that makes the plugin dump the optimized Core of that
 -- binding, after all fusion-plugin passes have run, to a file.
 --
--- The Core is written to a file under the @fusion-plugin-output@ directory, in
--- a subdirectory named after the package being compiled. For example, a
--- binding @myFunction@ in module @Data.Stream@ of package @my-pkg@ is written
--- to
--- @fusion-plugin-output\/my-pkg\/Data.Stream.myFunction.dump-simpl@.
+-- The Core is written to GHC's dump directory (as set by @-dumpdir@) if one is
+-- set, otherwise to a per-package subdirectory of @fusion-plugin-output@. For
+-- example, a binding @myFunction@ in module @Data.Stream@ of package @my-pkg@
+-- is written to @\<dump-dir\>\/Data.Stream.myFunction.dump-simpl@, or to
+-- @fusion-plugin-output\/my-pkg\/Data.Stream.myFunction.dump-simpl@ when no
+-- dump directory is set.
 --
--- Note that the output directory is created in the current directory from
--- where GHC is invoked, when building with cabal it is usually the directory
--- in which the cabal file of the package resides.
+-- Note that the @fusion-plugin-output@ fallback directory is created in the
+-- current directory from where GHC is invoked; when building with cabal that is
+-- usually the directory in which the cabal file of the package resides.
 --
 -- This is useful for inspecting the final Core of a hot binding without having
 -- to wade through the Core of the entire module.
@@ -233,15 +234,23 @@ data DumpCore = DumpCore
 -- 'DumpCorePasses' dumps only the annotated binding (and the closure of top
 -- level bindings it reaches).
 --
--- The files are written under the same directory as the 'DumpCore' annotation
--- output, using the same @\<module\>.\<binder\>.@ prefix, with a per-pass
--- suffix (a two digit pass counter and the pass name) appended in the same
--- format that the @dump-core@ option uses for its per-pass files. For example,
--- a binding @myFunction@ in module @Data.Stream@ produces one file per pass:
+-- The files are written to the same directory and with the same
+-- @\<module\>.@ prefix as the 'DumpCore' annotation output -- GHC's dump
+-- directory (as set by @-dumpdir@) if one is set, otherwise a per-package
+-- subdirectory of @fusion-plugin-output@ -- so all of a module's fusion-plugin
+-- dumps cluster together under one prefix. Each file is named
+-- @\<module\>.\<binder\>.\<NN-pass\>.dump-simpl@, where the per-pass suffix (a
+-- two digit pass counter and the pass name) is the same one the @dump-core@
+-- option uses for its per-pass files. For example, a binding @myFunction@ in
+-- module @Data.Stream@ of package @my-pkg@ produces one file per pass:
 --
 -- @
+-- -- with @-dumpdir dir@:
+-- dir\/Data.Stream.myFunction.00-Initial.dump-simpl
+-- dir\/Data.Stream.myFunction.01-After-...\.dump-simpl
+-- ...
+-- -- otherwise:
 -- fusion-plugin-output\/my-pkg\/Data.Stream.myFunction.00-Initial.dump-simpl
--- fusion-plugin-output\/my-pkg\/Data.Stream.myFunction.01-After-...\.dump-simpl
 -- ...
 -- @
 --
