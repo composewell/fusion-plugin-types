@@ -12,6 +12,10 @@
   types within a binding.
 * Add `MaxCoreSize` annotation to report if core size of a binding
   exceeds a certain threashold.
+* Add `DumpCore` annotation to write the optimized core of a binding to a
+  file.
+* Add `DumpCorePasses` annotation to write the core of a binding to a file
+  after every Core-to-core pass.
 
 ## 0.1.0
 

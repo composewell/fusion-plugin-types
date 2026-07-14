@@ -36,6 +36,7 @@ module Fusion.Plugin.Types
 
   -- ** Debugging Annotations
   , DumpCore(..)
+  , DumpCorePasses(..)
   )
 where
 
@@ -222,4 +223,34 @@ newtype MaxCoreSize = MaxCoreSize Int
 -- {-\# ANN myFunction DumpCore #-}
 -- @
 data DumpCore = DumpCore
+    deriving (Eq, Data)
+
+-- | A GHC annotation attached to a specific top level binding (via an @ANN@
+-- pragma on the binding) that makes the plugin dump the Core of that binding
+-- /after every Core-to-core pass/, each to its own file. This is the
+-- per-binding counterpart of the @dump-core@ plugin option: whereas
+-- @dump-core@ dumps the Core of the /whole module/ after each pass,
+-- 'DumpCorePasses' dumps only the annotated binding (and the closure of top
+-- level bindings it reaches).
+--
+-- The files are written under the same directory as the 'DumpCore' annotation
+-- output, using the same @\<module\>.\<binder\>.@ prefix, with a per-pass
+-- suffix (a two digit pass counter and the pass name) appended in the same
+-- format that the @dump-core@ option uses for its per-pass files. For example,
+-- a binding @myFunction@ in module @Data.Stream@ produces one file per pass:
+--
+-- @
+-- fusion-plugin-output\/my-pkg\/Data.Stream.myFunction.00-Initial.dump-simpl
+-- fusion-plugin-output\/my-pkg\/Data.Stream.myFunction.01-After-...\.dump-simpl
+-- ...
+-- @
+--
+-- This is useful for understanding how the Core of a single binding evolves
+-- across the optimizer pipeline, without wading through the Core of the entire
+-- module at every pass.
+--
+-- @
+-- {-\# ANN myFunction DumpCorePasses #-}
+-- @
+data DumpCorePasses = DumpCorePasses
     deriving (Eq, Data)
