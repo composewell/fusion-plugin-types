@@ -18,8 +18,11 @@ module Fusion.Plugin.Types
   -- Type references are Template Haskell 'Name's (e.g. @''Step@), not plain
   -- strings, to allow compile time checking of the names.
   --
-  -- At most one annotation is allowed per binding (attaching more than one is
-  -- a compile error).
+  -- At most one annotation of each type is allowed per binding (attaching more
+  -- than one of the same type is a compile error). Annotations of different
+  -- types may be combined -- e.g. a binding may use both an
+  -- 'InspectPatternMatches' and an 'InspectAllocations' annotation to inspect
+  -- both positions at once.
 
   -- ** Fusion Annotations
   -- | Annotations to force inlining for fusion.
@@ -30,7 +33,8 @@ module Fusion.Plugin.Types
 
   -- ** Inspection Annotations
   -- | Annotations to find fusion violations.
-  , InspectTypes(..)
+  , InspectPatternMatches(..)
+  , InspectAllocations(..)
   , InspectTypeClasses(..)
   , MaxCoreSize(..)
 
@@ -115,7 +119,8 @@ data NoFuse = NoFuse
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
--- pragma on the binding, not on a type) that requests a fusion report for just
+-- pragma on the binding, not on a type) that requests a fusion report for the
+-- types /pattern-matched/ (scrutinized, i.e. deconstructed in a @case@) in
 -- that binding.
 --
 -- The names must be /type/ names (double quote, e.g. @''Int@), not data
@@ -125,51 +130,50 @@ data NoFuse = NoFuse
 -- matches nothing, even though the report may /display/ the constructor name.
 --
 -- @
--- {-\# ANN function1 (ForbidFused [] []) #-}
--- {-\# ANN function1a (ForbidFused [''Maybe] []) #-}
--- {-\# ANN function1b (ForbidFused [''Maybe] [''Step]) #-}
--- {-\# ANN function2 (ForbidBoxedUse [''Maybe]) #-}
--- {-\# ANN function2a (ForbidPatternMatches [''Maybe]) #-}
--- {-\# ANN function2b (ForbidAllocations [''Maybe]) #-}
--- {-\# ANN function3 (PermitBoxedUse [''Int, ''IO]) #-}
--- {-\# ANN function4 (PermitPatternMatches [''Int, ''IO]) #-}
--- {-\# ANN function5 (PermitAllocations [''Int, ''IO]) #-}
+-- {-\# ANN function1 (ForbidPatternMatches [''Maybe]) #-}
+-- {-\# ANN function2 (ForbidFusedPatternMatches [''Maybe] [''Step]) #-}
+-- {-\# ANN function3 (PermitPatternMatches [''Int, ''IO]) #-}
 -- @
-data InspectTypes
-    = ForbidFused [Name] [Name]
-    -- ^ Report occurrences of every 'Fuse'-annotated type found in the binding
-    -- -- plus any types named in the first (forbid) list, minus any types
-    -- named in the second (allow) list. A name present in both lists is
-    -- allowed.
-    | ForbidBoxedUse [Name]
-    -- ^ Blocklist: report occurrences of exactly the named types/constructors
-    -- found anywhere in the binding, regardless of whether they carry a 'Fuse'
-    -- annotation. Everything else in core is fine.
-    | ForbidPatternMatches [Name]
-    -- ^ Like 'ForbidBoxedUse' but only reports occurrences in a scrutinizing
-    -- (pattern-match, i.e. @case@) position -- a value being deconstructed --
-    -- ignoring constructing positions. Reports exactly the named types where
-    -- they are pattern-matched in the binding; everything else in core is fine.
-    | ForbidAllocations [Name]
-    -- ^ Like 'ForbidBoxedUse' but only reports occurrences in a constructing
-    -- (allocating) position -- a value being built -- ignoring scrutinizing
-    -- positions. Reports exactly the named types where they are constructed in
-    -- the binding; everything else in core is fine.
-    | PermitBoxedUse [Name]
-    -- ^ Allowlist: report occurrences of literally every type/constructor
-    -- found in the binding -- a general "boxing detector", not limited to
-    -- 'Fuse'-annotated types -- except the named types, which may appear
-    -- freely.
+data InspectPatternMatches
+    = ForbidPatternMatches [Name]
+    -- ^ Blocklist: report occurrences of exactly the named types found in a
+    -- scrutinizing or deconstructing (pattern-match, i.e. @case@) position in
+    -- the binding, regardless of whether they are annotated with 'Fuse'.
     | PermitPatternMatches [Name]
-    -- ^ Like 'PermitBoxedUse' but only reports occurrences in a scrutinizing
-    -- (pattern-match, i.e. @case@) position -- a value being deconstructed --
-    -- ignoring constructing positions. Reports every type pattern-matched in
-    -- the binding except the named types, which may appear freely.
-    | PermitAllocations [Name]
-    -- ^ Like 'PermitBoxedUse' but only reports occurrences in a constructing
-    -- (allocating) position -- a value being built -- ignoring scrutinizing
-    -- positions. Reports every type constructed in the binding except the
+    -- ^ Allowlist: report every type pattern-matched in the binding except the
     -- named types, which may appear freely.
+    | ForbidFusedPatternMatches [Name] [Name]
+    -- ^ Report pattern-match occurrences of every type annotated with 'Fuse'
+    -- found in the binding -- plus any types named in the first (forbid) list,
+    -- minus any types named in the second (allow) list. A name present in both
+    -- lists is allowed.
+    deriving (Eq, Data)
+
+-- | A GHC annotation attached to a specific top level binding (via an @ANN@
+-- pragma on the binding, not on a type) that requests a fusion report for the
+-- types /allocated/ (constructed, i.e. built up) in that binding.
+--
+-- The same name rules as 'InspectPatternMatches' apply: use /type/ names
+-- (double quote, e.g. @''Int@), not data constructor names.
+--
+-- @
+-- {-\# ANN function1 (ForbidAllocations [''Maybe]) #-}
+-- {-\# ANN function2 (ForbidFusedAllocations [''Maybe] [''Step]) #-}
+-- {-\# ANN function3 (PermitAllocations [''Int, ''IO]) #-}
+-- @
+data InspectAllocations
+    = ForbidAllocations [Name]
+    -- ^ Blocklist: report occurrences of exactly the named types found in a
+    -- constructing (allocating) position in the binding, regardless of whether
+    -- they are annotated with 'Fuse'.
+    | PermitAllocations [Name]
+    -- ^ Allowlist: report every type constructed in the binding except the
+    -- named types, which may appear freely.
+    | ForbidFusedAllocations [Name] [Name]
+    -- ^ Report constructing occurrences of every type annotated with 'Fuse'
+    -- found in the binding -- plus any types named in the first (forbid) list,
+    -- minus any types named in the second (allow) list. A name present in both
+    -- lists is allowed.
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
