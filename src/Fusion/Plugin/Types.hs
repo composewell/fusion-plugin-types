@@ -21,7 +21,7 @@ module Fusion.Plugin.Types
   -- At most one annotation of each type is allowed per binding (attaching more
   -- than one of the same type is a compile error). Annotations of different
   -- types may be combined -- e.g. a binding may use both an
-  -- 'InspectPatternMatches' and an 'InspectAllocations' annotation to inspect
+  -- 'InspectPatternMatches' and an 'InspectConstructions' annotation to inspect
   -- both positions at once.
 
   -- ** Fusion Annotations
@@ -34,7 +34,7 @@ module Fusion.Plugin.Types
   -- ** Inspection Annotations
   -- | Annotations to find fusion violations.
   , InspectPatternMatches(..)
-  , InspectAllocations(..)
+  , InspectConstructions(..)
   , InspectTypeClasses(..)
   , MaxCoreSize(..)
 
@@ -153,23 +153,23 @@ data InspectPatternMatches
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
 -- pragma on the binding, not on a type) that requests a fusion report for the
--- types /allocated/ (constructed, i.e. built up) in that binding.
+-- types /constructed/ (allocated, i.e. built up) in that binding.
 --
 -- The same name rules as 'InspectPatternMatches' apply: use /type/ names
 -- (double quote, e.g. @''Int@), not data constructor names.
 --
 -- @
--- {-\# ANN function1 (ForbidAllocations [''Maybe]) #-}
--- {-\# ANN function3 (PermitAllocations [''Int, ''IO]) #-}
+-- {-\# ANN function1 (ForbidConstructions [''Maybe]) #-}
+-- {-\# ANN function3 (PermitConstructions [''Int, ''IO]) #-}
 -- @
-data InspectAllocations
-    = ForbidAllocations [Name]
+data InspectConstructions
+    = ForbidConstructions [Name]
     -- ^ Blocklist: report occurrences of the named types found in a
     -- constructing (allocating) position in the binding. When the
     -- @forbid-fused@ plugin option is on, every type annotated with 'Fuse' is
     -- reported as well, with the named types added on top; otherwise only
     -- exactly the named types are reported.
-    | PermitAllocations [Name]
+    | PermitConstructions [Name]
     -- ^ Allowlist: report every type constructed in the binding except the
     -- named types, which may appear freely.
     deriving (Eq, Data)
