@@ -32,7 +32,10 @@ module Fusion.Plugin.Types
   , NoFuse(..)
 
   -- ** Inspection Annotations
-  -- | Annotations to find fusion violations.
+  -- | Annotations to find fusion violations. Two simple rules hold regardless
+  -- of any other conditions: a type explicitly listed in a @Forbid...@
+  -- annotation is always forbidden; a type explicitly listed in a @Permit...@
+  -- annotation is always allowed.
   , InspectPatternMatches(..)
   , InspectConstructions(..)
   , InspectTypeClasses(..)
@@ -118,11 +121,11 @@ newtype NoFuseTypes = NoFuseTypes [Name]
 data NoFuse = NoFuse
     deriving (Eq, Data)
 
--- NOTE: Unboxed and other non-heap-allocated types are ignored by these
--- inspection annotations by default. The @inspect-unboxed@ plugin option turns
--- on their inclusion module-wide, which is usually sufficient. If in future
--- per-binding control is wanted instead, the names could take a @#@ suffix,
--- for example "PermitConstructions#".
+-- NOTE: Unboxed types are ignored by these inspection annotations by default.
+-- The @inspect-unboxed@ plugin option turns on their inclusion module-wide,
+-- which is usually sufficient. If in future per-binding control is wanted
+-- instead, the names could take a @#@ suffix, for example
+-- "PermitConstructions#".
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
 -- pragma on the binding, not on a type) that requests a fusion report for the
@@ -141,14 +144,13 @@ data NoFuse = NoFuse
 -- @
 data InspectPatternMatches
     = ForbidPatternMatches [Name]
-    -- ^ Blocklist: report occurrences of the named types found in a
+    -- ^ Blocklist: names explicitly listed here are not allowed to occur in
     -- scrutinizing or deconstructing (pattern-match, i.e. @case@) position in
-    -- the binding. When the @forbid-fused@ plugin option is on, every type
-    -- annotated with 'Fuse' is reported as well, with the named types added on
-    -- top; otherwise only exactly the named types are reported.
+    -- the binding. When the @forbid-fused@ plugin option is enabled, types
+    -- annotated with 'Fuse' are implictly added to this list.
     | PermitPatternMatches [Name]
-    -- ^ Allowlist: report every type pattern-matched in the binding except the
-    -- named types, which may appear freely.
+    -- ^ Allowlist: names explicitly mentioned here are always allowed in
+    -- pattern matches in the binding.
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
@@ -164,14 +166,13 @@ data InspectPatternMatches
 -- @
 data InspectConstructions
     = ForbidConstructions [Name]
-    -- ^ Blocklist: report occurrences of the named types found in a
-    -- constructing (allocating) position in the binding. When the
-    -- @forbid-fused@ plugin option is on, every type annotated with 'Fuse' is
-    -- reported as well, with the named types added on top; otherwise only
-    -- exactly the named types are reported.
+    -- ^ Blocklist: names explicitly listed here are not allowed to occur in
+    -- constructing (usually leading to allocations) position in the binding.
+    -- When the @forbid-fused@ plugin option is enabled, types annotated with
+    -- 'Fuse' are implictly added to this list.
     | PermitConstructions [Name]
-    -- ^ Allowlist: report every type constructed in the binding except the
-    -- named types, which may appear freely.
+    -- ^ Allowlist: names explicitly mentioned here are always allowed in
+    -- constructing positions in the binding.
     deriving (Eq, Data)
 
 -- | A GHC annotation attached to a specific top level binding (via an @ANN@
